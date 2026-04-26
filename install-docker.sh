@@ -61,6 +61,11 @@ is_fedora_based() {
      "$DISTRO_ID" == "rocky" || "$DISTRO_ID" == "almalinux" || "$DISTRO_LIKE" == *"fedora"* ]]
 }
 
+is_arch_based() {
+  [[ "$DISTRO_ID" == "arch" || "$DISTRO_ID" == "manjaro" || "$DISTRO_ID" == "cachyos" || \
+     "$DISTRO_ID" == "endeavouros" || "$DISTRO_ID" == "garuda" || "$DISTRO_LIKE" == *"arch"* ]]
+}
+
 info "Distribución detectada: ${PRETTY_NAME:-$DISTRO_ID}"
 
 # ══════════════════════════════════════════════════════════════
@@ -106,12 +111,25 @@ install_docker_fedora() {
   dnf install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 }
 
+install_docker_arch() {
+  info "Actualizando sistema..."
+  pacman -Syu --noconfirm
+
+  info "Instalando Docker..."
+  pacman -S --noconfirm --needed docker docker-compose
+
+  # docker-buildx viene como plugin en el paquete extra
+  pacman -S --noconfirm --needed docker-buildx 2>/dev/null || true
+}
+
 if is_debian_based; then
   install_docker_debian
 elif is_fedora_based; then
   install_docker_fedora
+elif is_arch_based; then
+  install_docker_arch
 else
-  error "Distribución no soportada: $DISTRO_ID\n       Soportadas: Ubuntu, Debian, Fedora, RHEL, CentOS, Rocky, AlmaLinux"
+  error "Distribución no soportada: $DISTRO_ID\n       Soportadas: Ubuntu, Debian, Fedora, RHEL, CentOS, Rocky, AlmaLinux, Arch, Manjaro, CachyOS, EndeavourOS"
 fi
 
 # ─── Iniciar y habilitar Docker ──────────────────────────────
@@ -219,10 +237,26 @@ if $INSTALL_NVIDIA_DOCKER; then
     dnf install -y nvidia-container-toolkit
   }
 
+  install_nvidia_toolkit_arch() {
+    # nvidia-container-toolkit está disponible en los repos de Arch/CachyOS
+    pacman -S --noconfirm --needed nvidia-container-toolkit 2>/dev/null || {
+      warn "No encontrado en repos oficiales, intentando con AUR via yay..."
+      if command -v yay &>/dev/null; then
+        sudo -u "$REAL_USER" yay -S --noconfirm nvidia-container-toolkit
+      elif command -v paru &>/dev/null; then
+        sudo -u "$REAL_USER" paru -S --noconfirm nvidia-container-toolkit
+      else
+        error "No se pudo instalar nvidia-container-toolkit. Instala 'yay' o 'paru' e inténtalo de nuevo."
+      fi
+    }
+  }
+
   if is_debian_based; then
     install_nvidia_toolkit_debian
   elif is_fedora_based; then
     install_nvidia_toolkit_fedora
+  elif is_arch_based; then
+    install_nvidia_toolkit_arch
   fi
 
   # Configurar Docker runtime para NVIDIA
