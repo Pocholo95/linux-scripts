@@ -206,7 +206,7 @@ if $NVIDIA_DETECTED; then
   fi
 
   while true; do
-    read -rp "$(echo -e "${YELLOW}¿Instalar soporte GPU NVIDIA para Docker? [s/N]:${NC} ")" choice
+    read -rp "$(echo -e "${YELLOW}¿Instalar soporte GPU NVIDIA para Docker? [s/N]:${NC} ")" choice </dev/tty
     case "${choice,,}" in
       s|si|sí|y|yes) INSTALL_NVIDIA_DOCKER=true; break ;;
       n|no|"")        INSTALL_NVIDIA_DOCKER=false; break ;;
