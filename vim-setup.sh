@@ -62,7 +62,6 @@ cat > "$VIMRC" << 'EOF'
 " Apariencia y UI
 " ===========================
 set number
-set relativenumber
 set cursorline
 set scrolloff=5
 set wrap
@@ -72,6 +71,8 @@ set laststatus=2
 set ruler
 set showcmd
 set wildmenu
+set ttyfast
+set lazyredraw
 
 " ===========================
 " Comportamiento del editor
