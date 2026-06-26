@@ -53,7 +53,6 @@ if flatpak remotes --columns=name 2>/dev/null | grep -qx "${FLATHUB_NAME}"; then
     success "El repositorio Flathub ya está configurado."
 else
     info "Agregando repositorio Flathub..."
-    # Se agrega a nivel sistema para que esté disponible para todos los usuarios
     sudo flatpak remote-add --if-not-exists "${FLATHUB_NAME}" "${FLATHUB_URL}" \
         || die "No se pudo agregar el repositorio Flathub."
     success "Flathub agregado correctamente."
@@ -79,21 +78,7 @@ sudo flatpak remote-modify --enable "${FLATHUB_NAME}" \
     || die "No se pudo habilitar el remote Flathub."
 success "Flathub está habilitado y es el único remote activo."
 
-# ── 5. Actualizar metadata de Flathub ────────────────────────────────────────
-info "Actualizando metadata del repositorio Flathub..."
-sudo flatpak update --appstream -y 2>/dev/null || warn "No se pudo actualizar AppStream; continúa de todas formas."
-
-# ── 6. Instalar Flatseal (opcional pero recomendado) ─────────────────────────
-echo
-read -rp "$(echo -e "${YELLOW}¿Deseas instalar Flatseal (gestor de permisos para Flatpaks)? [s/N]: ${RESET}")" INSTALL_FLATSEAL
-if [[ "${INSTALL_FLATSEAL,,}" == "s" || "${INSTALL_FLATSEAL,,}" == "si" || "${INSTALL_FLATSEAL,,}" == "y" ]]; then
-    info "Instalando Flatseal desde Flathub..."
-    flatpak install -y flathub com.github.tchx84.Flatseal \
-        && success "Flatseal instalado." \
-        || warn "No se pudo instalar Flatseal. Puedes instalarlo luego con: flatpak install flathub com.github.tchx84.Flatseal"
-fi
-
-# ── 7. Resumen final ──────────────────────────────────────────────────────────
+# ── 5. Resumen final ──────────────────────────────────────────────────────────
 echo
 echo -e "${BOLD}══════════════════════ Resumen ══════════════════════${RESET}"
 echo -e "  Flatpak versión : $(flatpak --version | awk '{print $2}')"
