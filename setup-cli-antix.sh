@@ -19,7 +19,9 @@
 set -Eeuo pipefail
 
 VERSION="2.0.0-i386"
-SCRIPT_NAME="$(basename "${BASH_SOURCE[0]}")"
+# When the script is piped into bash (curl | bash) there is no BASH_SOURCE,
+# and set -u would abort right here. Fall back to a plain name.
+SCRIPT_NAME="$(basename "${BASH_SOURCE[0]:-setup-cli-antix.sh}")"
 
 BIN_DIR="$HOME/.local/bin"
 SHARE_DIR="$HOME/.local/share"
