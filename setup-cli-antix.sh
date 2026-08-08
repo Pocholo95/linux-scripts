@@ -259,6 +259,7 @@ write_file() {
 #  Preflight
 # ------------------------------------------------------------------------------
 APT_UPDATED=false
+SCRATCH=""          # scratch dir for downloads, wiped on exit
 SUDO=""
 ARCH_DEB=""
 ARCH_GNU=""
@@ -297,6 +298,12 @@ preflight() {
   fi
 
   mkdir -p "$BIN_DIR" "$SHELL_CONF_DIR" "$STATE_DIR" 2>/dev/null || true
+
+  # One scratch directory for the whole run. A RETURN trap per function would
+  # fire after its local $tmp is gone, which under set -u aborts the script.
+  SCRATCH="$(mktemp -d 2>/dev/null || echo /tmp/setup-cli.$$)"
+  mkdir -p "$SCRATCH" 2>/dev/null || true
+  trap 'rm -rf "${SCRATCH:-}"' EXIT
 }
 
 apt_update_once() {
@@ -351,7 +358,7 @@ deb_from_gh() {
 
   local url tmp
   url="$(gh_url "$repo" "$pattern")" || return 1
-  tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' RETURN
+  tmp="$(mktemp -d "${SCRATCH:-/tmp}/deb.XXXXXX")" || return 1
   curl -fsSL --max-time 180 -o "$tmp/p.deb" "$url" || return 1
   $SUDO dpkg -i "$tmp/p.deb" >/dev/null 2>&1 || $SUDO apt-get -f install -y -qq >/dev/null 2>&1
   have "$name" && { ok "$name (github)"; INSTALLED+=("$name"); return 0; }
@@ -365,7 +372,7 @@ bin_from_gh() {
 
   local url tmp found
   url="$(gh_url "$repo" "$pattern")" || return 1
-  tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' RETURN
+  tmp="$(mktemp -d "${SCRATCH:-/tmp}/bin.XXXXXX")" || return 1
 
   case "$url" in
     *.zip)
